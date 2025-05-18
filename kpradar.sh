@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# KPRadar - Ethical Recon Toolkit
+# KPRadar - Ethical KPSD Toolkit
 # Author: Kithmina Prasad
 # For educational and legal use only
 
@@ -12,13 +12,12 @@ echo "█████╔╝ ██████╔╝███████║ █
 echo "██╔═██╗ ██╔═══╝ ██╔══██║ ██╔══██║██║   ██║ ██╔══██║ ██╔══██╗"
 echo "██║  ██╗██║     ██║  ██║ ██║  ██║╚██████╔╝ ██║  ██║ ██║  ██║"
 echo "╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝ ╚═╝  ╚═╝ ╚═════╝  ╚═╝  ╚═╝ ╚═╝  ╚═╝"
-echo " 🔍 KPRadar - Ethical Recon Toolkit v1.0 by Kithmina 🔍"
+echo " 🔍 KPRadar - Ethical KPSD Toolkit v1.0 by Kithmina 🔍"
 echo -e "\e[0m"
 
 echo ""
-echo "Welcome to the KPRadar Toolkit — a Bash-based ethical hacking tool for cybersecurity labs and education."
-echo "It includes password brute-force, network scans, subdomain enumeration, intel lookups, reporting, and more."
-echo "Use responsibly."
+echo "Welcome to KPRadar Toolkit — a Bash-based ethical reconnaissance suite designed for cybersecurity education and authorized testing."
+echo "Please ensure you have explicit permission before running any tests. Use responsibly and legally."
 echo "-------------------------------------------------------------------------------------------------------------------"
 
 read -p "❓ Do you have permission to perform these tests? (yes/no): " has_permission
@@ -31,7 +30,7 @@ fi
 mkdir -p output
 LOGFILE="output/kpradar_$(date +%Y%m%d_%H%M%S).log"
 
-# ===== Check Dependency =====
+# ===== Dependency Checker =====
 function check_dependency() {
   local tool=$1
   if ! command -v "$tool" &> /dev/null; then
@@ -51,39 +50,37 @@ function sanitize_input() {
   echo "$1" | sed 's/[^a-zA-Z0-9.-]//g'
 }
 
-# ===== Output Wrapper =====
+# ===== Output Logger =====
 function log_and_display() {
-  echo -e "\n\033[34m[+] $1\033[0m" | tee -a "$LOGFILE"
-  eval "$2" 2>&1 | tee -a "$LOGFILE"
+  local message="$1"
+  shift
+  echo -e "\n\033[34m[+] $message\033[0m" | tee -a "$LOGFILE"
+  "$@" 2>&1 | tee -a "$LOGFILE"
 }
 
-# ===== Features =====
+# ===== Feature Functions =====
 
-# Nmap Scan
 function run_nmap() {
   check_dependency nmap
   read -p " Enter target IP/domain: " TARGET
   TARGET=$(sanitize_input "$TARGET")
-  log_and_display "Running Nmap on $TARGET" "nmap -sV $TARGET"
+  log_and_display "Running Nmap on $TARGET" nmap -sV "$TARGET"
 }
 
-# Whois Lookup
 function run_whois() {
   check_dependency whois
   read -p " Enter domain: " DOMAIN
   DOMAIN=$(sanitize_input "$DOMAIN")
-  log_and_display "Whois Lookup for $DOMAIN" "whois $DOMAIN"
+  log_and_display "Whois Lookup for $DOMAIN" whois "$DOMAIN"
 }
 
-# Subdomain Enumeration
 function subdomain_enum() {
   check_dependency sublist3r
   read -p " Enter domain: " DOMAIN
   DOMAIN=$(sanitize_input "$DOMAIN")
-  log_and_display "Subdomain Enumeration for $DOMAIN" "sublist3r -d $DOMAIN"
+  log_and_display "Subdomain Enumeration for $DOMAIN" sublist3r -d "$DOMAIN"
 }
 
-# DNS & ASN Lookup
 function dns_lookup() {
   check_dependency dig
   check_dependency curl
@@ -97,22 +94,32 @@ function dns_lookup() {
   curl -s "https://api.hackertarget.com/aslookup/?q=$DOMAIN" | tee -a "$LOGFILE"
 }
 
-# Vulnerability Scan
 function vuln_scan() {
   check_dependency nmap
   read -p "🎯 Enter target IP/domain: " TARGET
   TARGET=$(sanitize_input "$TARGET")
-  log_and_display "Running Vulnerability Scripts on $TARGET" "nmap --script vuln $TARGET"
+  log_and_display "Running Vulnerability Scripts on $TARGET" nmap --script vuln "$TARGET"
 }
 
-# Generate report (just log file copy)
+# ===== Generate Report =====
 function generate_report() {
-  echo -e "\n--- KPRADAR REPORT ---\nTool run at: $(date)" >> "$LOGFILE"
-  cp "$LOGFILE" output/summary.txt
-  echo "📝 Summary report saved as output/summary.txt"
+  SUMMARY="output/summary.txt"
+  echo "📝 Generating report summary..."
+
+  {
+    echo "======== KPRADAR REPORT ========"
+    echo "Generated on: $(date)"
+    echo ""
+    echo "====== Summary of Findings ======"
+    grep -E "^\[+\]" "$LOGFILE"
+    echo ""
+    echo "====== Full Log Path: $LOGFILE ======"
+    echo "You can open the full log for more detailed info."
+  } > "$SUMMARY"
+
+  echo "✅ Summary report saved as: $SUMMARY"
 }
 
-# Final Exit Prompt
 function ask_exit_permission() {
   echo
   read -p "Do you want to close KPRADAR Toolkit now? (yes/no): " close_ans
@@ -125,7 +132,7 @@ function ask_exit_permission() {
   fi
 }
 
-# ===== CLI MENU =====
+# ===== Menu =====
 clear
 echo "===== KPRadar Menu ====="
 echo "1) Nmap Scan"
@@ -149,5 +156,4 @@ case $choice in
   *) echo "❌ Invalid choice." ;;
 esac
 
-# Ask for exit or restart
 ask_exit_permission
